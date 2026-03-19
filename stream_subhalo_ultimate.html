@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stream-Subhalo Interaction</title>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    :root {
+      /* Light Theme Defaults — matches main site */
+      --bg-body:      #f0f0f6;
+      --bg-sidebar:   rgba(240,240,246,0.92);
+      --text-main:    #0a0a14;
+      --text-muted:   rgba(10,10,20,0.55);
+      --border:       rgba(0,0,0,0.09);
+      --card-bg:      rgba(255,255,255,0.65);
+      --accent:       #0277BD;
+      --accent-hot:   #C2185B;
+      --overlay-bg:   rgba(240,240,246,0.82);
+      --overlay-border: rgba(0,0,0,0.1);
+      --shadow:       rgba(0,0,0,0.08);
+      --font-main:    'DM Sans', system-ui, sans-serif;
+      --font-art:     'Cormorant Garamond', Georgia, serif;
+      --font-mono:    'DM Mono', monospace;
+    }
+
+    [data-theme="dark"] {
+      /* Dark Theme — matches main site */
+      --bg-body:      #060609;
+      --bg-sidebar:   rgba(6,6,9,0.92);
+      --text-main:    #e8e8ef;
+      --text-muted:   rgba(232,232,239,0.5);
+      --border:       rgba(255,255,255,0.08);
+      --card-bg:      rgba(255,255,255,0.045);
+      --accent:       #4FC3F7;
+      --accent-hot:   #FF6B9D;
+      --overlay-bg:   rgba(6,6,9,0.82);
+      --overlay-border: rgba(255,255,255,0.1);
+      --shadow:       rgba(0,0,0,0.5);
+    }
+
+    body { 
+      font-family: var(--font-main); 
+      margin: 0; display: flex; height: 100vh; overflow: hidden; 
+      background: var(--bg-body); color: var(--text-main);
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* --- Sidebar --- */
+    #sidebar {
+      width: 350px;
+      background: var(--bg-sidebar);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      z-index: 20; box-shadow: 2px 0 20px var(--shadow);
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    .sidebar-header {
+      padding: 18px 20px;
+      border-bottom: 2px solid var(--accent);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .brand { font-family: var(--font-art); font-weight: 400; font-size: 1.05rem; letter-spacing: 0.5px; }
+    .back-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: var(--font-mono); font-size: 0.68rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-muted); text-decoration: none;
+      border: 1px solid var(--border); padding: 4px 12px;
+      border-radius: 50px; transition: color 0.2s, border-color 0.2s;
+    }
+    .back-link:hover { color: var(--accent); border-color: var(--accent); }
+
+    /* Custom Toggle with Icons */
+    .theme-switch-wrapper { display: flex; align-items: center; }
+    .theme-switch {
+      position: relative; display: inline-block; width: 50px; height: 26px;
+    }
+    .theme-switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc; transition: .4s; border-radius: 34px;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 5px;
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 20px; width: 20px;
+      left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; z-index: 2;
+    }
+    /* Icons inside the slider track */
+    .icon-sun, .icon-moon { font-size: 14px; user-select: none; }
+    .icon-sun { color: #f39c12; margin-left: auto; padding-right: 4px; }
+    .icon-moon { color: #f1c40f; margin-right: auto; padding-left: 4px; opacity: 0; transition: 0.3s; }
+
+    input:checked + .slider { background-color: #444; }
+    input:checked + .slider:before { transform: translateX(24px); }
+    input:checked + .slider .icon-moon { opacity: 1; }
+    input:checked + .slider .icon-sun { opacity: 0; }
+
+    .sidebar-content { padding: 20px; overflow-y: auto; flex: 1; }
+
+    h3 {
+      font-family: var(--font-mono);
+      font-size: 0.62rem; color: var(--accent);
+      text-transform: uppercase; letter-spacing: 0.18em; margin: 25px 0 10px 0;
+      font-weight: 400;
+    }
+    h3:first-of-type { margin-top: 0; }
+
+    /* Control Groups */
+    .control-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px; margin-bottom: 10px;
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    .input-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .slider-row { display: flex; align-items: center; gap: 10px; }
+
+    label { font-family: var(--font-main); font-size: 0.85rem; font-weight: 400; }
+
+    input[type="number"] { 
+      width: 50px; padding: 4px; background: var(--bg-body); 
+      border: 1px solid var(--border); color: var(--text-main);
+      border-radius: 4px; text-align: right;
+    }
+
+    input[type="range"] { flex: 1; accent-color: var(--accent); cursor: pointer; }
+
+    button.play-btn {
+      background: none; border: 1px solid var(--border); color: var(--text-muted);
+      border-radius: 6px; width: 28px; height: 28px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s; font-size: 0.75rem;
+    }
+    button.play-btn:hover { background: var(--accent); color: #060609; border-color: var(--accent); }
+    button.play-btn.active { background: var(--accent); color: #060609; border-color: var(--accent); }
+
+    /* Legend Chips */
+    .legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .legend-chip {
+      background: var(--card-bg);
+      backdrop-filter: blur(6px);
+      border: 1px solid var(--border);
+      color: var(--text-muted); padding: 6px 10px; border-radius: 10px;
+      font-family: var(--font-mono); font-size: 0.72rem;
+      cursor: pointer; display: flex; align-items: center; gap: 6px;
+      transition: all 0.2s; user-select: none; letter-spacing: 0.04em;
+    }
+    .legend-chip:hover { border-color: var(--accent); color: var(--text-main); }
+    .legend-chip.active { background: var(--card-bg); border-color: currentColor; color: var(--text-main); font-weight: 400; box-shadow: 0 2px 8px var(--shadow); }
+
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* --- Plot Area --- */
+    #plot-area { flex: 1; position: relative; background: var(--bg-body); transition: background 0.3s; }
+    #plot { width: 100%; height: 100%; }
+
+    /* Overlays */
+    .overlay {
+      position: absolute; padding: 10px 15px; border-radius: 6px;
+      background: var(--overlay-bg); border: 1px solid var(--overlay-border);
+      backdrop-filter: blur(4px); pointer-events: none;
+      transition: background 0.3s, border-color 0.3s, color 0.3s;
+    }
+
+    #title-overlay { top: 15px; left: 20px; font-size: 1.1rem; z-index: 10; }
+
+    #basis-key { 
+      bottom: 20px; right: 20px; text-align: right; z-index: 10; 
+      font-size: 0.85rem; line-height: 1.5; display: none;
+    }
+    #basis-key.visible { display: block; }
+
+    .key-item { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+    .key-color { width: 12px; height: 3px; border-radius: 2px; }
+
+    /* Author Footer */
+    #author-footer {
+      position: absolute; bottom: 15px; left: 20px; z-index: 10;
+      font-family: var(--font-mono); font-size: 0.68rem;
+      color: var(--text-muted); opacity: 0.7; letter-spacing: 0.12em;
+      text-transform: uppercase; pointer-events: none;
+    }
+
+  </style>
+</head>
+<body data-theme="dark">
+
+<div id="sidebar">
+  <div class="sidebar-header">
+    <div>
+      <a href="index.html" class="back-link"><i class="fa-solid fa-arrow-left fa-xs"></i> Back</a>
+      <div class="brand" style="margin-top:8px">Stream–Subhalo Interaction</div>
+    </div>
+    <div class="theme-switch-wrapper">
+      <label class="theme-switch" title="Toggle Light/Dark Mode">
+        <input type="checkbox" id="dark-mode-toggle">
+        <span class="slider">
+          <span class="icon-moon">☾</span>
+          <span class="icon-sun">☀</span>
+        </span>
+      </label>
+    </div>
+  </div>
+
+  <div class="sidebar-content">
+
+    <h3>Geometry Controls</h3>
+
+    <div class="control-card">
+      <div class="input-row">
+        <label>Impact Angle \(\psi\)</label>
+        <input id="psi-num" type="number" step="1" value="45">
+      </div>
+      <div class="slider-row">
+        <input id="psi-slider" type="range" min="0" max="360" step="1" value="45">
+        <button id="psi-play" class="play-btn" title="Animate Rotation">▶</button>
+      </div>
+    </div>
+
+    <div class="control-card">
+      <div class="input-row">
+        <label>Velocity Angle \(\theta\)</label>
+        <input id="theta-num" type="number" step="1" value="45">
+      </div>
+      <div class="slider-row">
+        <input id="theta-slider" type="range" min="0" max="360" step="1" value="45">
+        <button id="theta-play" class="play-btn" title="Animate Rotation">▶</button>
+      </div>
+    </div>
+
+    <h3>Scene Objects</h3>
+    <div class="legend-grid">
+      <div class="legend-chip active" data-target="stream" style="color: #666">
+        <div class="dot" style="background: #2c3e50"></div> Stream
+      </div>
+      <div class="legend-chip active" data-target="plane" style="color: #666">
+        <div class="dot" style="background: rgba(100,100,100,0.5)"></div> Impact Plane
+      </div>
+      <div class="legend-chip active" data-target="subhalo" style="color: #9B30FF">
+        <div class="dot" style="background: #9B30FF"></div> Subhalo
+      </div>
+      <div class="legend-chip active" data-target="b" style="color: #444">
+        <div class="dot" style="background: #444"></div> Impact Param \(b\)
+      </div>
+    </div>
+
+    <h3>Vectors & Labels</h3>
+    <div class="control-card">
+      <label class="input-row" style="cursor: pointer">
+        <span>Basis Vectors (\(\hat{e}_1, \hat{e}_2, \hat{e}_3\))</span>
+        <input type="checkbox" id="show-basis" checked>
+      </label>
+      <label class="input-row" style="cursor: pointer">
+        <span>Subhalo Vel (\(\vec{v}_{\rm rel}\))</span>
+        <input type="checkbox" id="show-v-rel" checked>
+      </label>
+      <label class="input-row" style="cursor: pointer">
+        <span>Stream Vel (\(\vec{v}_{\rm str}\))</span>
+        <input type="checkbox" id="show-v-stream" checked>
+      </label>
+      <label class="input-row" style="cursor: pointer">
+        <span>Angular Arcs (\(\psi, \theta\))</span>
+        <input type="checkbox" id="show-arcs" checked>
+      </label>
+      <label class="input-row" style="cursor: pointer">
+        <span>3D Unicode Labels</span>
+        <input type="checkbox" id="show-labels" checked>
+      </label>
+    </div>
+
+  </div>
+</div>
+
+<div id="plot-area">
+  <div id="title-overlay" class="overlay">
+     \(\mathbf{b} = 1.0\,\text{kpc}\) &nbsp;|&nbsp; 
+     \(\psi\) = <span id="disp-psi">45</span>\(^\circ\) &nbsp;|&nbsp; 
+     \(\theta\) = <span id="disp-theta">45</span>\(^\circ\)
+  </div>
+
+  <div id="basis-key" class="overlay visible">
+    <div class="key-item"><span style="font-weight:bold">Stream Parallel</span> (\(\hat{e}_1\)) <div class="key-color" style="background: #dc3545"></div></div>
+    <div class="key-item"><span style="font-weight:bold">Normal / Ang. Mom.</span> (\(\hat{e}_3, \vec{L}\)) <div class="key-color" style="background: #007bff"></div></div>
+    <div class="key-item"><span style="font-weight:bold">Cross Product</span> (\(\hat{e}_2\)) <div class="key-color" style="background: #28a745"></div></div>
+  </div>
+
+  <div id="author-footer">
+    Author: Arpit Arora | 2026
+  </div>
+
+  <div id="plot"></div>
+</div>
+
+<script>
+const C = {"w_p": [8.0, 0.0, 0.0, 0.0, 220.0, 0.0], "b": 1.0, "v_rel_para": 50.0, "v_rel_perp": 100.0, "psi0": 45.0, "theta0": 45.0};
+
+// --- 1. CONFIG & STATE ---
+const STATE = {
+  theme: document.body.getAttribute('data-theme') || 'dark',
+  vis: { stream: true, plane: true, subhalo: true, b: true }
+};
+
+const COLORS = {
+    PARA: '#FF6B00', PERP: '#00C8FF', TOTAL: '#FF1493',
+    PSI: '#9B30FF', THETA: '#FFD700',
+    E1: '#dc3545', E2: '#28a745', E3: '#007bff', 
+    VSTREAM: '#6f42c1'
+};
+
+// Unicode Maps for 3D Scene
+const U_MATH = {
+    psi:   "\u{1D713}", theta: "\u{1D703}",
+    e1:    "𝐞\u2081", e2: "𝐞\u2082", e3: "𝐞\u2083",
+    vpar:  "𝐯\u2225", vperp: "𝐯\u27C2", vrel:  "𝐯_rel", vstr:  "𝐯_str",
+    b: "b"
+};
+
+// --- 2. VECTOR MATH ---
+const vScale = (a,s) => [a[0]*s, a[1]*s, a[2]*s];
+const vAdd = (a,b) => [a[0]+b[0], a[1]+b[1], a[2]+b[2]];
+const vCross = (a,b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+const vNorm = (a) => Math.sqrt(a[0]**2 + a[1]**2 + a[2]**2);
+const vUnit = (a) => vScale(a, 1/(vNorm(a)+1e-9));
+
+// --- 3. HELPER: CYLINDER GENERATOR ---
+function createTube(start, end, radius, color, opacity=1.0) {
+    const vec = vAdd(end, vScale(start, -1));
+    const height = vNorm(vec);
+    const dir = vUnit(vec);
+
+    let x=[], y=[], z=[], i=[], j=[], k=[];
+    const N_circ = 12; const N_len = 2;
+
+    let u = vCross(dir, [1,0,0]);
+    if(vNorm(u)<0.1) u = vCross(dir, [0,1,0]);
+    u = vUnit(u);
+    const v = vUnit(vCross(dir, u));
+
+    for(let l=0; l<N_len; l++){
+        const dist = (l/(N_len-1)) * height;
+        const center = vAdd(start, vScale(dir, dist));
+        for(let c=0; c<N_circ; c++){
+            const angle = (c/N_circ)*2*Math.PI;
+            const pt = vAdd(center, vAdd(vScale(u, radius*Math.cos(angle)), vScale(v, radius*Math.sin(angle))));
+            x.push(pt[0]); y.push(pt[1]); z.push(pt[2]);
+        }
+    }
+
+    for(let l=0; l<N_len-1; l++){
+        for(let c=0; c<N_circ; c++){
+            const next_c = (c+1)%N_circ;
+            const p1 = l*N_circ + c;
+            const p2 = l*N_circ + next_c;
+            const p3 = (l+1)*N_circ + c;
+            const p4 = (l+1)*N_circ + next_c;
+            i.push(p1); j.push(p2); k.push(p3);
+            i.push(p2); j.push(p4); k.push(p3);
+        }
+    }
+
+    return {
+        type: 'mesh3d', x: x, y: y, z: z, i: i, j: j, k: k,
+        color: color, opacity: opacity, flatshading: false, name: 'StreamTube', hoverinfo: 'none'
+    };
+}
+
+// --- 4. MAIN DRAW FUNCTION ---
+function draw() {
+    const psi_deg = parseFloat(document.getElementById('psi-num').value) || 0;
+    const theta_deg = parseFloat(document.getElementById('theta-num').value) || 0;
+
+    document.getElementById('disp-psi').innerText = psi_deg;
+    document.getElementById('disp-theta').innerText = theta_deg;
+
+    const psi = psi_deg * Math.PI / 180;
+    const theta = theta_deg * Math.PI / 180;
+
+    // Toggles
+    const showBasis = document.getElementById('show-basis').checked;
+    const showVRel = document.getElementById('show-v-rel').checked;
+    const showVStream = document.getElementById('show-v-stream').checked;
+    const showArcs = document.getElementById('show-arcs').checked;
+    const showLabels = document.getElementById('show-labels').checked;
+
+    document.getElementById('basis-key').classList.toggle('visible', showBasis);
+
+    // --- Vectors ---
+    const e1 = vUnit([C.w_p[3], C.w_p[4], C.w_p[5]]);
+    let cp = vCross([C.w_p[0], C.w_p[1], C.w_p[2]], e1);
+    if(vNorm(cp) < 1e-6) cp = vCross(e1, [1,0,0]);
+    const e3 = vUnit(cp);
+    const e2 = vCross(e3, e1);
+
+    const rel_x_sh = vAdd(vScale(e2, C.b * Math.cos(psi)), vScale(e3, C.b * Math.sin(psi)));
+
+    const traces = [];
+
+    // 1. STREAM
+    if(STATE.vis.stream) {
+        const sLen = 1.2;
+        const start = vScale(e1, -sLen);
+        const end = vScale(e1, sLen);
+        const tubeColor = STATE.theme === 'dark' ? '#555' : '#2c3e50';
+        traces.push(createTube(start, end, 0.08, tubeColor, 0.6));
+    }
+
+    // 2. IMPACT PLANE
+    if(STATE.vis.plane) {
+        const circlePts = [];
+        for(let i=0; i<=72; i++){
+            let t = (i/72)*2*Math.PI;
+            circlePts.push(vAdd(vScale(e2, C.b*Math.cos(t)), vScale(e3, C.b*Math.sin(t))));
+        }
+        traces.push({
+            type: 'scatter3d', 
+            x: circlePts.map(p=>p[0]), y: circlePts.map(p=>p[1]), z: circlePts.map(p=>p[2]),
+            mode: 'lines', line: {color: COLORS.PLANE, width: 4}, 
+            name: 'Impact Plane', hoverinfo: 'none'
+        });
+    }
+
+    // 3. SUBHALO
+    if(STATE.vis.subhalo) {
+        traces.push({
+            type: 'scatter3d', x: [rel_x_sh[0]], y: [rel_x_sh[1]], z: [rel_x_sh[2]],
+            mode: 'markers', 
+            marker: {size: 15, color: COLORS.PSI, line: {color: 'white', width: 2}}, 
+            name: 'Subhalo Center', hovertemplate: 'Subhalo<extra></extra>'
+        });
+
+        traces.push({
+            type: 'scatter3d', x: [rel_x_sh[0]], y: [rel_x_sh[1]], z: [rel_x_sh[2]],
+            mode: 'markers', 
+            marker: {size: 50, color: COLORS.PSI, opacity: 0.2}, 
+            hoverinfo: 'none'
+        });
+
+        if(showLabels) {
+            const labelPos = vAdd(rel_x_sh, vScale(e2, 0.2));
+            traces.push({
+                type: 'scatter3d', x: [labelPos[0]], y: [labelPos[1]], z: [labelPos[2]],
+                mode: 'text', text: ["\u{1D440}_sub"], 
+                textfont: {size: 14, color: COLORS.PSI}, hoverinfo: 'none'
+            });
+        }
+    }
+
+    // 4. PARAMETER B (Line + Label)
+    if(STATE.vis.b) {
+        // Line
+        traces.push({
+            type: 'scatter3d', x: [0, rel_x_sh[0]], y: [0, rel_x_sh[1]], z: [0, rel_x_sh[2]],
+            mode: 'lines', line: {color: STATE.theme === 'dark' ? '#aaa' : '#444', dash: 'dash', width: 4}, 
+            hoverinfo: 'none'
+        });
+
+        // Label "b" at midpoint
+        if(showLabels) {
+            const midB = vScale(rel_x_sh, 0.5);
+            traces.push({
+                type: 'scatter3d', x: [midB[0]], y: [midB[1]], z: [midB[2]],
+                mode: 'text', text: [U_MATH.b], 
+                textfont: {size: 16, color: STATE.theme === 'dark' ? '#ccc' : '#333', family:'Arial Black'}, 
+                hoverinfo: 'none'
+            });
+        }
+    }
+
+    // --- HELPER ARROWS ---
+    function addArrow(start, vec, color, label, size=0.08, width=6) {
+        const end = vAdd(start, vec);
+        traces.push({
+            type: 'scatter3d', x: [start[0], end[0]], y: [start[1], end[1]], z: [start[2], end[2]],
+            mode: 'lines', line: {color: color, width: width}, hoverinfo: 'none'
+        });
+        traces.push({
+            type: 'cone', x: [end[0]], y: [end[1]], z: [end[2]], u: [vec[0]], v: [vec[1]], w: [vec[2]],
+            sizemode: "absolute", sizeref: size, showscale: false, 
+            colorscale: [[0,color],[1,color]], hoverinfo: 'none'
+        });
+        if(showLabels && label) {
+            const lp = vAdd(end, vScale(vUnit(vec), 0.15));
+            traces.push({
+                type: 'scatter3d', x: [lp[0]], y: [lp[1]], z: [lp[2]],
+                mode: 'text', text: [label], 
+                textfont: {size: 16, color: color, family: 'Arial, sans-serif'},
+                hoverinfo: 'none'
+            });
+        }
+    }
+
+    if(showBasis){
+        addArrow([0,0,0], vScale(e1, 0.8), COLORS.E1, U_MATH.e1);
+        addArrow([0,0,0], vScale(e2, 0.8), COLORS.E2, U_MATH.e2);
+        addArrow([0,0,0], vScale(e3, 0.8), COLORS.E3, U_MATH.e3);
+    }
+
+    if(showVStream) {
+        addArrow([0,0,0], vScale(e1, 0.5), COLORS.VSTREAM, U_MATH.vstr);
+    }
+
+    if(showVRel) {
+        const mag = Math.sqrt(C.v_rel_para**2 + C.v_rel_perp**2);
+        const v_pa = vScale(e1, (C.v_rel_para/mag)*0.7);
+        const v_pe_dir = vAdd(vScale(e2, Math.cos(theta)), vScale(e3, Math.sin(theta)));
+        const v_pe = vScale(v_pe_dir, (C.v_rel_perp/mag)*0.7);
+        const v_tot = vAdd(v_pa, v_pe);
+
+        addArrow(rel_x_sh, v_pa, COLORS.PARA, U_MATH.vpar);
+        addArrow(rel_x_sh, v_pe, COLORS.PERP, U_MATH.vperp);
+        addArrow(rel_x_sh, v_tot, COLORS.TOTAL, U_MATH.vrel, 0.1, 8);
+    }
+
+    // --- ARCS & REF LINES ---
+    if(showArcs) {
+        // Psi Arc
+        const p_pts = [];
+        for(let i=0; i<=20; i++){ let t = (i/20)*psi; p_pts.push(vScale(vAdd(vScale(e2, Math.cos(t)), vScale(e3, Math.sin(t))), C.b*0.3)); }
+        traces.push({ type: 'scatter3d', x: p_pts.map(p=>p[0]), y: p_pts.map(p=>p[1]), z: p_pts.map(p=>p[2]), mode: 'lines', line: {color: COLORS.PSI, width: 6}, hoverinfo:'none' });
+
+        // Theta Arc
+        const th_pts = [];
+        for(let i=0; i<=20; i++){ let t = (i/20)*theta; th_pts.push(vAdd(rel_x_sh, vScale(vAdd(vScale(e2, Math.cos(t)), vScale(e3, Math.sin(t))), 0.25))); }
+        traces.push({ type: 'scatter3d', x: th_pts.map(p=>p[0]), y: th_pts.map(p=>p[1]), z: th_pts.map(p=>p[2]), mode: 'lines', line: {color: COLORS.THETA, width: 6}, hoverinfo:'none' });
+
+        // Labels
+        if(showLabels) {
+            const p_mid = vScale(vAdd(vScale(e2, Math.cos(psi/2)), vScale(e3, Math.sin(psi/2))), C.b*0.4);
+            const t_mid = vAdd(rel_x_sh, vScale(vAdd(vScale(e2, Math.cos(theta/2)), vScale(e3, Math.sin(theta/2))), 0.35));
+            traces.push({ type: 'scatter3d', x: [p_mid[0]], y: [p_mid[1]], z: [p_mid[2]], mode: 'text', text: [U_MATH.psi], textfont: {color: COLORS.PSI, size: 24}, hoverinfo:'none' });
+            traces.push({ type: 'scatter3d', x: [t_mid[0]], y: [t_mid[1]], z: [t_mid[2]], mode: 'text', text: [U_MATH.theta], textfont: {color: COLORS.THETA, size: 24}, hoverinfo:'none' });
+        }
+
+        // Theta Reference Line (e2 at subhalo) - ONLY if Arcs are on
+        const ref_line = [rel_x_sh, vAdd(rel_x_sh, vScale(e2, 0.45))];
+        traces.push({ 
+            type: 'scatter3d', x: ref_line.map(p=>p[0]), y: ref_line.map(p=>p[1]), z: ref_line.map(p=>p[2]), 
+            mode: 'lines', line: {color: COLORS.E2, width: 3, dash: 'dot'}, hoverinfo: 'none' 
+        });
+    }
+
+    // --- THEME COLORS ---
+    const bg_color = STATE.theme === 'dark' ? '#050505' : '#ffffff';
+    const axis_color = STATE.theme === 'dark' ? '#333333' : '#eeeeee';
+    const grid_color = STATE.theme === 'dark' ? '#222222' : '#e5e5e5';
+
+    const layout = {
+        scene: { 
+            aspectmode: 'cube', 
+            xaxis: {showgrid: true, zeroline: false, showticklabels: false, title: {text:''}, backgroundcolor: axis_color, gridcolor: grid_color},
+            yaxis: {showgrid: true, zeroline: false, showticklabels: false, title: {text:''}, backgroundcolor: axis_color, gridcolor: grid_color},
+            zaxis: {showgrid: true, zeroline: false, showticklabels: false, title: {text:''}, backgroundcolor: axis_color, gridcolor: grid_color},
+            camera: { eye: {x: 1.4, y: 1.4, z: 1.2} },
+            dragmode: 'orbit',
+            bgcolor: bg_color
+        },
+        margin: {l: 0, r: 0, b: 0, t: 0},
+        showlegend: false,
+        paper_bgcolor: 'rgba(0,0,0,0)',
+    };
+
+    Plotly.react('plot', traces, layout, {responsive: true, displayModeBar: false});
+}
+
+// --- 5. INITIALIZATION & EVENTS ---
+document.addEventListener('DOMContentLoaded', () => {
+
+    // Sync Helpers
+    function sync(id1, id2) {
+        const el1 = document.getElementById(id1);
+        const el2 = document.getElementById(id2);
+        el1.addEventListener('input', () => { el2.value = el1.value; draw(); });
+        el2.addEventListener('input', () => { el1.value = el2.value; draw(); });
+    }
+    sync('psi-num', 'psi-slider');
+    sync('theta-num', 'theta-slider');
+
+    // Toggles
+    ['show-basis', 'show-v-rel', 'show-v-stream', 'show-arcs', 'show-labels'].forEach(id => {
+        document.getElementById(id).addEventListener('change', draw);
+    });
+
+    // Dark Mode — sync with main site localStorage
+    const storedTheme = localStorage.getItem('theme') || 'dark';
+    STATE.theme = storedTheme;
+    document.body.setAttribute('data-theme', storedTheme);
+    document.getElementById('dark-mode-toggle').checked = (storedTheme === 'dark');
+
+    document.getElementById('dark-mode-toggle').addEventListener('change', (e) => {
+        STATE.theme = e.target.checked ? 'dark' : 'light';
+        document.body.setAttribute('data-theme', STATE.theme);
+        localStorage.setItem('theme', STATE.theme);
+
+        // Update chip colors based on theme
+        document.querySelectorAll('.legend-chip').forEach(chip => {
+            const tgt = chip.dataset.target;
+            if(tgt === 'stream') {
+                chip.querySelector('.dot').style.background = STATE.theme === 'dark' ? '#aaa' : '#2c3e50';
+            } else if (tgt === 'b') {
+                chip.querySelector('.dot').style.background = STATE.theme === 'dark' ? '#aaa' : '#444';
+            }
+        });
+
+        draw();
+    });
+
+    // Legend Chips
+    document.querySelectorAll('.legend-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const target = chip.dataset.target;
+            STATE.vis[target] = !STATE.vis[target];
+            chip.classList.toggle('active');
+            chip.style.opacity = STATE.vis[target] ? '1' : '0.5';
+            draw();
+        });
+    });
+
+    // Play Buttons
+    const anims = { psi: null, theta: null };
+    function togglePlay(key) {
+        const btn = document.getElementById(key + '-play');
+        const slider = document.getElementById(key + '-slider');
+        const num = document.getElementById(key + '-num');
+
+        if(anims[key]) {
+            clearInterval(anims[key]);
+            anims[key] = null;
+            btn.innerText = "▶";
+            btn.classList.remove('active');
+        } else {
+            btn.innerText = "⏸";
+            btn.classList.add('active');
+            anims[key] = setInterval(() => {
+                let val = parseFloat(slider.value);
+                val = (val + 1) % 360;
+                slider.value = val;
+                num.value = val;
+                draw();
+            }, 30); 
+        }
+    }
+    document.getElementById('psi-play').addEventListener('click', () => togglePlay('psi'));
+    document.getElementById('theta-play').addEventListener('click', () => togglePlay('theta'));
+
+    draw();
+});
+</script>
+
+</body>
+</html>
