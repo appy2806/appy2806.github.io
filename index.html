@@ -209,6 +209,14 @@
         linear-gradient(to right, rgba(6,6,9,0.9) 0%, rgba(6,6,9,0.25) 55%, rgba(6,6,9,0.55) 100%),
         linear-gradient(to bottom, rgba(6,6,9,0.15) 55%, rgba(6,6,9,1) 100%);
     }
+    /* Mobile: galaxy core sits directly behind text — strengthen overlay */
+    @media (max-width: 768px) {
+      #hero-bg::after {
+        background:
+          radial-gradient(ellipse 120% 70% at 50% 45%, rgba(6,6,9,0.55) 0%, rgba(6,6,9,0.82) 65%),
+          linear-gradient(to bottom, rgba(6,6,9,0.3) 30%, rgba(6,6,9,1) 100%);
+      }
+    }
     :root[data-theme="light"] #hero-bg::after {
       background:
         radial-gradient(ellipse 80% 60% at 60% 50%, transparent 20%, rgba(240,240,246,0.5) 70%),
@@ -232,16 +240,19 @@
       font-size: clamp(3.5rem, 8vw, 6.5rem);
       font-weight: 300; letter-spacing: -0.03em; line-height: 1.0; margin-bottom: 10px;
       opacity: 0; animation: fadeUp 0.9s 0.5s forwards;
+      text-shadow: 0 2px 20px rgba(6,6,9,0.8);
     }
     .hero-title {
       font-family: var(--font-display); font-size: clamp(1.1rem, 2.5vw, 1.6rem);
       font-weight: 300; font-style: italic; color: var(--accent-hot); margin-bottom: 14px;
       opacity: 0; animation: fadeUp 0.9s 0.7s forwards;
+      text-shadow: 0 1px 12px rgba(6,6,9,0.95);
     }
     .hero-affil {
       font-size: 0.9rem; color: var(--text-muted); margin-bottom: 38px;
       max-width: 480px; line-height: 1.72;
       opacity: 0; animation: fadeUp 0.9s 0.9s forwards;
+      text-shadow: 0 1px 10px rgba(6,6,9,0.95), 0 2px 24px rgba(6,6,9,0.9);
     }
     .hero-affil strong { color: var(--text); font-weight: 400; }
     .hero-ctas {
@@ -724,14 +735,6 @@
           dark matter. I am currently focused on <strong>stellar streams</strong> and what they
           reveal about the distribution and particle properties of dark matter.
         </p>
-        <div class="about-tags reveal">
-          <span class="tag">#DarkMatter</span>
-          <span class="tag">#StellarStreams</span>
-          <span class="tag">#GalacticDynamics</span>
-          <span class="tag">#CosmologicalSims</span>
-          <span class="tag">#SelfInteractingDM</span>
-          <span class="tag">#FIRE-2</span>
-        </div>
         <div class="about-timeline reveal">
           <div class="timeline-item">
             <span class="timeline-year">2024 —</span>
