@@ -428,13 +428,16 @@
     }
     [data-theme="light"] .hero-eyebrow {
       display: inline-block;
-      background: rgba(255,255,255,0.28);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      padding: 5px 18px;
-      border-radius: 50px;
-      border: 1px solid rgba(255,255,255,0.45);
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      position: relative;
+    }
+    [data-theme="light"] .hero-eyebrow::before {
+      content: '';
+      position: absolute;
+      inset: -8px -20px;
+      background: rgba(6, 4, 22, 0.38);
+      filter: blur(18px);
+      border-radius: 6px;
+      z-index: -1;
     }
     .card-media-placeholder {
       background:
