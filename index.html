@@ -131,6 +131,9 @@
       z-index: -1;
     }
     .card-border:hover::before { opacity: 1; }
+    /* contact cards — smaller radius */
+    .card-border-sm { border-radius: 15px; }
+    .card-border-sm::before { border-radius: 16px; }
 
     /* ─── NAVIGATION ─────────────────────────────────────── */
     #nav {
@@ -823,8 +826,8 @@
       <!-- Card 2 -->
       <div class="card-border reveal reveal-delay-1">
         <div class="research-card">
-          <div class="card-media" data-img="assets/temp_streams.png" data-caption="Stellar Streams in Time-Evolving Potentials">
-            <img src="assets/temp_streams.png" alt="Stellar streams" loading="lazy">
+          <div class="card-media" data-img="assets/temp_streams.gif" data-caption="Stellar Streams in Time-Evolving Potentials">
+            <img src="assets/temp_streams.gif" alt="Stellar streams" loading="lazy">
           </div>
           <div class="card-body">
             <div class="card-tags">
@@ -1052,20 +1055,24 @@
       <p class="section-sub">Always happy to discuss dark matter, stellar streams, simulations, or potential collaborations.</p>
     </div>
     <div class="contact-grid reveal">
-      <a href="mailto:aarora@uw.edu" class="contact-card">
-        <div class="contact-icon email"><i class="fa-regular fa-envelope"></i></div>
-        <div>
-          <div class="contact-label">Email</div>
-          <div class="contact-value">aarora@uw.edu</div>
-        </div>
-      </a>
-      <a href="https://github.com/appy2806" class="contact-card" target="_blank" rel="noopener">
-        <div class="contact-icon github"><i class="fa-brands fa-github"></i></div>
-        <div>
-          <div class="contact-label">GitHub</div>
-          <div class="contact-value">appy2806</div>
-        </div>
-      </a>
+      <div class="card-border card-border-sm">
+        <a href="mailto:aarora@uw.edu" class="contact-card">
+          <div class="contact-icon email"><i class="fa-regular fa-envelope"></i></div>
+          <div>
+            <div class="contact-label">Email</div>
+            <div class="contact-value">aarora@uw.edu</div>
+          </div>
+        </a>
+      </div>
+      <div class="card-border card-border-sm">
+        <a href="https://github.com/appy2806" class="contact-card" target="_blank" rel="noopener">
+          <div class="contact-icon github"><i class="fa-brands fa-github"></i></div>
+          <div>
+            <div class="contact-label">GitHub</div>
+            <div class="contact-value">appy2806</div>
+          </div>
+        </a>
+      </div>
     </div>
   </div>
 </section>
