@@ -479,6 +479,13 @@
       transform: translateX(3px);
     }
     .card-link.prep { color: var(--text-subtle); border-color: var(--border); cursor: default; pointer-events: none; }
+    .card-links { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .card-link.threed {
+      color: var(--gold); border-color: rgba(255,213,79,0.28);
+    }
+    .card-link.threed:hover {
+      background: rgba(255,213,79,0.12); border-color: var(--gold); color: var(--gold);
+    }
 
     /* ─── PUBLICATIONS ───────────────────────────────────── */
     #publications { background: linear-gradient(to bottom, transparent, rgba(79,195,247,0.02) 50%, transparent); }
@@ -543,6 +550,17 @@
     .viz-card:hover {
       border-color: var(--border-hover); transform: translateY(-4px);
       box-shadow: 0 16px 48px var(--shadow-glow);
+    }
+    .viz-featured { margin-bottom: 26px; }
+    .viz-featured .viz-badge { right: auto; left: 12px; }
+    .viz-embed { position: relative; width: 100%; height: 540px; background: #000; overflow: hidden; }
+    .viz-embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+    .viz-featured .viz-body { flex-direction: row; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+    .viz-featured .viz-copy { flex: 1; min-width: 260px; display: flex; flex-direction: column; }
+    .viz-featured .card-link { margin-bottom: 2px; }
+    @media (max-width: 720px) {
+      .viz-embed { height: 380px; }
+      .viz-featured .viz-body { flex-direction: column; align-items: stretch; }
     }
     .viz-preview { position: relative; aspect-ratio: 16/9; overflow: hidden; }
     .viz-canvas { width: 100%; height: 100%; display: block; }
@@ -846,13 +864,18 @@
           <div class="card-body">
             <div class="card-tags">
               <span class="card-tag">Stellar Streams</span>
-              <span class="card-tag gold">arXiv</span>
+              <span class="card-tag hot">ApJ 2026</span>
             </div>
             <h3 class="card-title">Stellar Streams in a Time-Evolving Milky Way</h3>
             <p class="card-desc">Evolution of stellar streams — tidal remnants of disrupted satellite galaxies — in realistic, time-dependent Milky Way potentials from zoomed cosmological hydrodynamical simulations.</p>
-            <a href="https://arxiv.org/abs/2605.16200" class="card-link" target="_blank" rel="noopener">
-              <i class="fa-solid fa-arrow-up-right-from-square fa-xs"></i> Read Paper
-            </a>
+            <div class="card-links">
+              <a href="https://arxiv.org/abs/2605.16200" class="card-link" target="_blank" rel="noopener">
+                <i class="fa-solid fa-arrow-up-right-from-square fa-xs"></i> Read Paper
+              </a>
+              <a href="viz/streams/index.html" class="card-link threed" target="_blank" rel="noopener">
+                <i class="fa-solid fa-cube fa-xs"></i> Explore in 3D
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -913,9 +936,9 @@
               No Stream Left Unscathed: The Imprint of a Host Galaxy
             </a>
           </div>
-          <div class="pub-journal">arXiv:2605.16200 &nbsp;·&nbsp; Arora, A. et al.</div>
+          <div class="pub-journal">ApJ, accepted &nbsp;·&nbsp; arXiv:2605.16200 &nbsp;·&nbsp; Arora, A. et al.</div>
         </div>
-        <span class="pub-pill arxiv">arXiv</span>
+        <span class="pub-pill apj">ApJ</span>
       </div>
       <div class="pub-item">
         <div class="pub-year">2025</div>
@@ -1004,6 +1027,31 @@
         high-performance N-body simulation of tidal disruption.
       </p>
     </div>
+
+    <!-- Featured: live evolving-streams visualization -->
+    <div class="card-border reveal">
+      <div class="viz-card viz-featured">
+        <div class="viz-embed">
+          <iframe src="viz/streams/index.html?embed=1" loading="lazy" allowfullscreen
+                  title="Stellar streams in evolving Milky Way models"></iframe>
+          <span class="viz-badge">Live · Interactive 3D</span>
+        </div>
+        <div class="viz-body">
+          <div class="viz-copy">
+            <div class="card-tags">
+              <span class="card-tag">Stellar Streams</span>
+              <span class="card-tag hot">Companion to Arora et al. 2026</span>
+            </div>
+            <h3 class="viz-title">Streams in an Evolving Milky Way</h3>
+            <p class="viz-desc">A live 3D catalog of ~200 stellar streams formed in a time-evolving versus a static Milky Way.</p>
+          </div>
+          <a href="viz/streams/index.html" class="card-link" target="_blank" rel="noopener">
+            <i class="fa-solid fa-up-right-and-down-left-from-center fa-xs"></i> Open full screen
+          </a>
+        </div>
+      </div>
+    </div>
+
     <div class="viz-grid">
 
       <!-- Stream-Subhalo Tool -->
