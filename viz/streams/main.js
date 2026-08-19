@@ -15,8 +15,7 @@ const PARAMS = new URLSearchParams(window.location.search);
 // still win over the preset, so it's a starting point rather than a lock.
 const PRESETS = {
     // Press embeds: a single evolving pane with no overlay text and no eye button.
-    // Gear and fullscreen stay visible, and fullscreen opens the side-by-side
-    // comparison with the full chrome restored.
+    // Gear and fullscreen stay visible.
     press: {
         model: 'evolving', text: false, eye: false, gear: true, fs: true,
         // Fullscreen is the same view at full size, not a promotion to the site's
