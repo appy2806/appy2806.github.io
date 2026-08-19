@@ -5,10 +5,88 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 const DEV_STATS = false;   // FPS overlay, dev only
 const ENABLE_BLOOM = false; // post-processing glow, wired but off (sprites already glow)
 
-// Embed mode (?embed=1): hide the control panel, force auto-rotate on. The view mode
-// is already side-by-side by default, so an embedded iframe shows a clean, self-running
-// side-by-side comparison with no chrome.
-const EMBED = new URLSearchParams(window.location.search).has('embed');
+// --- embed configuration ---
+// Every default below can be overridden per-embed with a URL query parameter, so a
+// third-party page (press, a talk, a collaborator's site) can pin the view it wants
+// without touching this file. README.md documents the full parameter list.
+const PARAMS = new URLSearchParams(window.location.search);
+
+// Named presets give a third party one short, stable URL to paste. Individual params
+// still win over the preset, so it's a starting point rather than a lock.
+const PRESETS = {
+    // Press embeds: a single evolving pane with no overlay text and no eye button.
+    // Gear and fullscreen stay visible, and fullscreen opens the side-by-side
+    // comparison with the full chrome restored.
+    press: {
+        model: 'evolving', text: false, eye: false, gear: true, fs: true,
+        // Fullscreen is the same view at full size, not a promotion to the site's
+        // chrome: still no text, still no eye, gear only. A reader who wants the
+        // comparison opens it from the panel themselves.
+        fsChrome: false, fsModel: 'keep',
+        // Pane labels return in side-by-side, where they're the only way to tell the
+        // two models apart.
+        labels: 'side',
+    },
+};
+
+const TRUE_WORDS = ['', '1', 'true', 'yes', 'on'];
+const FALSE_WORDS = ['0', 'false', 'no', 'off'];
+
+// Every reader falls back to the shipped default on a missing or unparseable value, so
+// a typo in someone else's iframe degrades to the standard view instead of a blank page.
+function paramBool(name, fallback) {
+    if (!PARAMS.has(name)) return fallback;
+    const v = (PARAMS.get(name) || '').trim().toLowerCase();
+    if (TRUE_WORDS.includes(v)) return true;
+    if (FALSE_WORDS.includes(v)) return false;
+    return fallback;
+}
+
+function paramNum(name, fallback, min, max) {
+    if (!PARAMS.has(name)) return fallback;
+    const v = parseFloat(PARAMS.get(name));
+    if (Number.isNaN(v)) return fallback;
+    return Math.max(min, Math.min(max, v));
+}
+
+function paramEnum(name, fallback, allowed) {
+    const v = (PARAMS.get(name) || '').trim().toLowerCase();
+    return allowed.includes(v) ? v : fallback;
+}
+
+const PRESET = PRESETS[paramEnum('preset', '', Object.keys(PRESETS))] || {};
+
+// ?embed=1 keeps its original meaning: the site's own iframe, chrome-free but for the
+// eye and fullscreen buttons.
+const EMBED = paramBool('embed', false);
+
+// Which chrome shows in the inline (non-fullscreen) view. Fullscreen always restores
+// all of it, so a promoted embed matches the standalone page.
+const SHOW_TEXT = paramBool('text', PRESET.text !== undefined ? PRESET.text : true);
+const CHROME = {
+    gear: paramBool('gear', PRESET.gear !== undefined ? PRESET.gear : !EMBED),
+    // The eye's only job is toggling overlay text, so it defaults off for an embed that
+    // has none. ?eye=1 forces it back.
+    eye: paramBool('eye', PRESET.eye !== undefined ? PRESET.eye : SHOW_TEXT),
+    text: SHOW_TEXT,
+    fs: paramBool('fs', PRESET.fs !== undefined ? PRESET.fs : true),
+};
+
+// Whether fullscreen restores the chrome an embed hid. On by default, so fullscreen
+// promotes an embed to the full experience; ?fschrome=0 keeps the embed's own look at
+// full size and leaves the gear as the way to explore.
+const FS_CHROME = paramBool('fschrome', PRESET.fsChrome !== undefined ? PRESET.fsChrome : true);
+
+// The pane labels name each model, so they're worth keeping in a side-by-side view even
+// when the rest of the text is off: 'side' shows them only where they disambiguate.
+const LABELS = paramEnum('labels', PRESET.labels || (SHOW_TEXT ? 'on' : 'off'), ['on', 'off', 'side']);
+
+// Model view to switch to when entering fullscreen; 'keep' leaves the view alone.
+// Exiting fullscreen restores whatever was showing before.
+const FS_MODEL = paramEnum('fsmodel', PRESET.fsModel || 'keep', ['evolving', 'static', 'both', 'keep']);
+
+// Applied before the catalogs load so hidden chrome is never painted.
+applyChrome();
 
 // --- tunables ---
 const DISK_RADIUS = 15.5;   // kpc, matches the reference
@@ -44,13 +122,17 @@ const initialCamera = { pos: new THREE.Vector3(), target: new THREE.Vector3() };
 // UI state. modelMode drives both the view layout and the crossfade:
 // 'evolving'/'static' -> single-cloud toggle view, 'both' -> side-by-side.
 const guiConfig = {
-    modelMode: 'both',
-    nStreams: 100,
-    pointSize: 0.25,
-    diskBrightness: 1.0,
-    autoRotate: true,
-    rotationSpeed: 0.25,
+    modelMode: paramEnum('model', PRESET.model || 'both', ['evolving', 'static', 'both']),
+    nStreams: paramNum('streams', 100, 1, 200) | 0,
+    pointSize: paramNum('size', 0.25, 0.05, 0.5),
+    diskBrightness: paramNum('disk', 1.0, 0, 2),
+    autoRotate: paramBool('rotate', true),
+    rotationSpeed: paramNum('speed', 0.25, 0.05, 2),
 };
+
+// Set by wireControls so fullscreen can drive the segmented control, keeping the panel
+// in sync when ?fsmodel changes the view.
+let selectModelMode = (mode) => setModelMode(mode);
 
 // Soft round sprite (radial gradient) for additive-blended glow.
 function makePointTexture() {
@@ -191,7 +273,7 @@ function init() {
     controls.enablePan = false;          // pan disabled per design
     controls.rotateSpeed = 0.9;
     controls.zoomSpeed = 1.0;
-    controls.autoRotate = guiConfig.autoRotate || EMBED;
+    controls.autoRotate = guiConfig.autoRotate;
     // Auto-rotate orbits about the camera up axis (z, since up = +z), so it works
     // from any camera angle.
     controls.autoRotateSpeed = guiConfig.rotationSpeed * 5.0;
@@ -210,17 +292,18 @@ function init() {
     frameCamera();
     updateCameraAspect();
 
-    // Always wire the panel. In embed mode it's hidden inline (CSS), but going
+    // Always wire the panel, even when this embed hides the gear (CSS): going
     // fullscreen promotes the embed to the full experience, so the controls must
     // already exist and work.
     wireControls();       // custom console panel
     setupControlPanel();  // gear toggle + drag behavior
-    if (EMBED) document.body.classList.add('embed');
 
     applyViewMode();
+    // A single-model start (?model=static) would otherwise crossfade in from evolving.
+    crossfade = crossfadeTarget;
     setStreams(guiConfig.nStreams);   // default subset applied to both models
     setupHint();                      // touch-aware interaction wording
-    setupFullscreen();                // shown in embed too
+    setupFullscreen();                // shown in embeds by default
     setupCleanView();                 // eye toggle: hide all overlay text
 
     if (DEV_STATS) {
@@ -290,6 +373,7 @@ function bindRange(rangeId, numId, def, onInput) {
         onInput(v);
     };
 
+    range.value = clamp(def);
     range.addEventListener('input', () => apply(parseFloat(range.value), false));
     num.addEventListener('change', () => {
         let v = parseFloat(num.value);
@@ -298,8 +382,13 @@ function bindRange(rangeId, numId, def, onInput) {
         num.value = fmt(v);
         apply(v, true);
     });
+    // The reset target is this embed's default, which a URL param can move, so the
+    // tooltip is written here rather than hardcoded in the markup.
     const resetBtn = num.parentElement.querySelector('.mini-reset');
-    if (resetBtn) resetBtn.addEventListener('click', () => { num.value = fmt(def); apply(def, true); });
+    if (resetBtn) {
+        resetBtn.title = 'Reset to ' + fmt(def);
+        resetBtn.addEventListener('click', () => { num.value = fmt(def); apply(def, true); });
+    }
 
     num.value = fmt(parseFloat(range.value));
     paint();
@@ -322,15 +411,16 @@ function wireControls() {
         setModelMode(mode);
     };
     btns.forEach(b => b.addEventListener('click', () => selectMode(b.dataset.mode)));
+    selectModelMode = selectMode;
     selectMode(guiConfig.modelMode);
 
-    bindRange('r-streams', 'v-streams', 100, v => setStreams(v | 0));
-    bindRange('r-size', 'v-size', 0.25, v => { setPointSize(v); render(); });
-    bindRange('r-disk', 'v-disk', 1.0, v => {
+    bindRange('r-streams', 'v-streams', guiConfig.nStreams, v => setStreams(v | 0));
+    bindRange('r-size', 'v-size', guiConfig.pointSize, v => { setPointSize(v); render(); });
+    bindRange('r-disk', 'v-disk', guiConfig.diskBrightness, v => {
         if (diskMesh) diskMesh.material.opacity = v;
         render();
     });
-    bindRange('r-speed', 'v-speed', 0.25, v => { controls.autoRotateSpeed = v * 5.0; });
+    bindRange('r-speed', 'v-speed', guiConfig.rotationSpeed, v => { controls.autoRotateSpeed = v * 5.0; });
 
     // Auto-rotate pill switch.
     const sw = document.getElementById('sw-rotate');
@@ -425,10 +515,26 @@ function setupHint() {
     el.textContent = touch ? 'Drag: rotate. Pinch: zoom.' : 'Left-drag: rotate. Scroll: zoom.';
 }
 
+// Hide the chrome this embed opted out of. Called first at module scope, before the
+// catalogs load, so hidden text is never painted — then again on every fullscreen
+// change, since fullscreen can restore the full toolkit (see FS_CHROME).
+function applyChrome() {
+    const fs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    const full = fs && FS_CHROME;
+    document.body.classList.toggle('no-gear', !(CHROME.gear || full));
+    document.body.classList.toggle('no-eye', !(CHROME.eye || full));
+    document.body.classList.toggle('no-text', !(CHROME.text || full));
+    document.body.classList.toggle('no-fs', !CHROME.fs);
+    const labels = full ? 'on' : LABELS;
+    document.body.classList.toggle('no-labels', labels === 'off');
+    document.body.classList.toggle('labels-side', labels === 'side');
+}
+
 // Fullscreen toggle. Works inside an iframe when the embed grants allowfullscreen.
 function setupFullscreen() {
     const btn = document.getElementById('fs-btn');
     if (!btn) return;
+    let modeBeforeFs = null;
     const target = document.documentElement;
     btn.addEventListener('click', () => {
         if (document.fullscreenElement || document.webkitFullscreenElement) {
@@ -440,12 +546,24 @@ function setupFullscreen() {
     const onChange = () => {
         const fs = !!(document.fullscreenElement || document.webkitFullscreenElement);
         btn.classList.toggle('active', fs);
-        // In embed mode this reveals the (otherwise hidden) control panel.
         document.body.classList.toggle('fs', fs);
+        applyChrome();   // may reveal chrome the inline embed had hidden
+        // ?fsmodel lets an embed open a different view at full size — a single-pane
+        // press embed can expand into the side-by-side comparison. Exiting restores
+        // whatever was showing before, including a change made from the panel.
+        if (FS_MODEL !== 'keep') {
+            if (fs) {
+                modeBeforeFs = guiConfig.modelMode;
+                selectModelMode(FS_MODEL);
+            } else if (modeBeforeFs) {
+                selectModelMode(modeBeforeFs);
+                modeBeforeFs = null;
+            }
+        }
         // Promoting an embed to fullscreen should match the main site: a collapsed
         // gear in the default top-right corner. Clear any stale inline position so it
         // snaps back to the corner, and make sure it starts collapsed.
-        if (EMBED && fs) {
+        if (!CHROME.gear && fs) {
             const ctrls = document.getElementById('controls');
             ctrls.style.left = ctrls.style.right = ctrls.style.top = '';
             ctrls.classList.remove('open');

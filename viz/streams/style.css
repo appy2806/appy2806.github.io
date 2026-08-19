@@ -297,15 +297,33 @@ body.chrome-hidden #clean-btn:hover {
     opacity: 1;
 }
 
-/* Embed: the control panel is hidden inline, but fullscreen (body.fs) promotes the
-   embed to the full experience, so the gear comes back. */
-body.embed:not(.fs) #controls {
+/* Per-embed chrome. A URL param can switch off each piece independently (see
+   README.md), and every rule is scoped to :not(.fs) so fullscreen promotes any embed
+   to the full experience — controls, credits and all. */
+body.no-gear #controls {
     display: none;
 }
 
-/* With the gear hidden inline, the eye takes the corner slot itself. */
-body.embed:not(.fs) #clean-btn {
+/* With the gear hidden, the eye takes the corner slot itself. */
+body.no-gear #clean-btn {
     right: 12px;
+}
+
+body.no-eye #clean-btn,
+body.no-fs #fs-btn {
+    display: none;
+}
+
+/* Text off: the streams alone, with the icon buttons at full strength. Distinct from
+   .chrome-hidden (the eye toggle), which also dims the buttons for a clean still.
+   labels-side keeps the pane names for side-by-side, where they're the only way to
+   tell the two models apart, and drops them in a single pane that needs no key. */
+body.no-text #info,
+body.no-text #footer,
+body.no-labels #labels,
+body.labels-side:not(.side-by-side) #labels {
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* Console panel. Collapsed by default; width- and height-capped with an internal
