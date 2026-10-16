@@ -590,6 +590,19 @@
       border-radius: 50px; font-size: 0.8rem; color: var(--text-muted);
     }
     .cv-affil-chip i { color: var(--accent-hot); }
+    .cv-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      margin: 0 auto 10px; max-width: 440px;
+    }
+    .cv-stat { padding: 4px 8px; display: flex; flex-direction: column-reverse; gap: 2px; }
+    .cv-stat + .cv-stat { border-left: 1px solid var(--border); }
+    .cv-stat dd {
+      font-family: var(--font-display); font-weight: 300; font-size: 2.6rem;
+      line-height: 1; letter-spacing: -0.03em; color: var(--text);
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    .cv-stat dt { font-size: 0.78rem; color: var(--text-muted); }
+    .cv-stats-date { font-size: 0.72rem; color: var(--text-subtle); margin-bottom: 24px; }
 
     /* ─── CONTACT ────────────────────────────────────────── */
     #contact {
@@ -681,6 +694,7 @@
       .viz-grid { grid-template-columns: 1fr; }
       .section { padding: 72px 0; }
       .cv-panel { padding: 32px 20px; }
+      .cv-stat dd { font-size: 2.1rem; }
       .contact-grid { grid-template-columns: 1fr; max-width: 420px; }
       .pub-item { grid-template-columns: 60px 1fr; }
       .pub-pill { display: none; }
@@ -762,7 +776,7 @@
       University of Washington &nbsp;·&nbsp; Seattle, WA
     </p>
     <div class="hero-ctas">
-      <a href="#research" class="btn-primary"><i class="fa-solid fa-telescope"></i> Explore Research</a>
+      <a href="#research" class="btn-primary"><i class="fa-solid fa-meteor"></i> Explore Research</a>
       <a href="#contact" class="btn-ghost"><i class="fa-regular fa-envelope"></i> Get in Touch</a>
     </div>
   </div>
@@ -1022,8 +1036,8 @@
       <span class="section-label">/ 04 — Tools &amp; Visualizations</span>
       <h2 class="section-title">Interactive Science</h2>
       <p class="section-sub">
-        Open tools for exploring the geometry and physics of stellar stream encounters and
-        high-performance N-body simulation of tidal disruption.
+        Research made hands-on — the simulations and code behind my papers, opened up for you
+        to explore.
       </p>
     </div>
 
@@ -1041,7 +1055,7 @@
               <span class="card-tag hot">Companion to Arora et al. 2026</span>
             </div>
             <h3 class="viz-title">Streams in an Evolving Milky Way</h3>
-            <p class="viz-desc">A live 3D catalog of ~200 stellar streams formed in a time-evolving versus a static Milky Way.</p>
+            <p class="viz-desc">A live 3D catalog of ~200 stellar streams formed in a time-evolving versus a static Milky Way, as published in ApJ 1008, 91.</p>
           </div>
           <a href="viz/streams/index.html" class="card-link" target="_blank" rel="noopener">
             <i class="fa-solid fa-up-right-and-down-left-from-center fa-xs"></i> Open full screen
@@ -1062,7 +1076,7 @@
           <div class="viz-body">
             <h3 class="viz-title">Stream–Subhalo Impact Geometry</h3>
             <p class="viz-desc">Interactive 3D visualization of the geometry of a dark matter subhalo impacting a stellar stream. Explore impact angle ψ, velocity angle θ, basis vectors, and relative velocities in real time via Plotly.</p>
-            <a href="stream_subhalo_ultimate.html" class="card-link" target="_blank">
+            <a href="stream_subhalo_ultimate.html" class="card-link" target="_blank" rel="noopener">
               <i class="fa-solid fa-arrow-up-right-from-square fa-xs"></i> Launch Tool
             </a>
           </div>
@@ -1104,8 +1118,14 @@
         <span class="cv-affil-chip"><i class="fa-solid fa-university"></i> University of Washington</span>
         <span class="cv-affil-chip"><i class="fa-solid fa-graduation-cap"></i> Ph.D. UPenn 2024</span>
       </div>
+      <dl class="cv-stats">
+        <div class="cv-stat"><dt>publications</dt><dd data-cv-stat="publications">29</dd></div>
+        <div class="cv-stat"><dt>citations</dt><dd data-cv-stat="citations">637</dd></div>
+        <div class="cv-stat"><dt>invited talks</dt><dd data-cv-stat="invited_talks">24</dd></div>
+      </dl>
+      <p class="cv-stats-date">From my CV, updated <span data-cv-updated>October 2026</span></p>
       <p class="cv-text">My full CV includes a complete publication list, conference talks, teaching, and service activities.</p>
-      <a href="https://appy2806.github.io/CV_Arora/cv.pdf" class="btn-primary" target="_blank" style="margin:0 auto;display:inline-flex" download>
+      <a href="https://arpitarora.space/CV_Arora/cv.pdf" class="btn-primary" target="_blank" rel="noopener" style="margin:0 auto;display:inline-flex">
         <i class="fa-solid fa-download"></i> Download CV (PDF)
       </a>
     </div>
@@ -1543,6 +1563,23 @@ function initNbodyCanvas() {
   }
   draw();
 }
+
+// ── CV Stats (written by the CV_Arora build) ────────────────
+// The numbers in the markup are a fallback; this swaps in the latest build.
+fetch('https://arpitarora.space/CV_Arora/cv-stats.json', { cache: 'no-cache' })
+  .then(r => r.ok ? r.json() : Promise.reject(r.status))
+  .then(stats => {
+    document.querySelectorAll('[data-cv-stat]').forEach(el => {
+      const v = stats[el.dataset.cvStat];
+      if (Number.isFinite(v)) el.textContent = v.toLocaleString('en-US');
+    });
+    const updated = document.querySelector('[data-cv-updated]');
+    if (updated && stats.updated) {
+      updated.textContent = new Date(stats.updated + 'T00:00:00')
+        .toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    }
+  })
+  .catch(() => {});
 </script>
 </body>
 </html>
